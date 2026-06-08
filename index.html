@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Happy Best Friend's Day!</title>
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Poppins', sans-serif;
+            background: radial-gradient(circle, #2c1654 0%, #0b061f 100%);
+        }
+
+        /* Canvas for Three.js 3D graphics */
+        #canvas-container {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        /* 3D Scene Controls Overlay */
+        .controls {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 10px 18px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background: rgba(255, 112, 67, 0.8);
+            box-shadow: 0 0 15px rgba(255, 167, 38, 0.5);
+            border-color: transparent;
+        }
+
+        /* Instagram clip cards */
+        .insta-clips {
+            position: absolute;
+            top: 100px;
+            right: 30px;
+            z-index: 12;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 230px;
+            color: #fff;
+        }
+
+        .letter-modal .insta-clips {
+            position: static;
+            top: auto;
+            right: auto;
+            margin-top: 20px;
+            max-width: 100%;
+        }
+
+        .letter-modal .clip-card {
+            width: 100%;
+        }
+
+        .letter-modal .clip-thumb {
+            height: 80px;
+        }
+
+        .insta-clips .clip-title {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #ffca28;
+            text-shadow: 0 0 10px rgba(255, 202, 40, 0.5);
+        }
+
+        .clip-card {
+            display: block;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 18px;
+            overflow: hidden;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25);
+            text-decoration: none;
+            color: #fff;
+        }
+
+        .clip-thumb {
+            position: relative;
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, rgba(255, 87, 34, 0.9), rgba(255, 202, 40, 0.65));
+        }
+
+        .clip-thumb.clip-thumb-2 {
+            background: linear-gradient(135deg, rgba(106, 27, 154, 0.9), rgba(238, 130, 238, 0.65));
+        }
+
+        .clip-thumb.clip-thumb-3 {
+            background: linear-gradient(135deg, rgba(0, 188, 212, 0.9), rgba(56, 142, 60, 0.65));
+        }
+
+        .clip-play {
+            font-size: 1.5rem;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.45);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+        }
+
+        .clip-info {
+            padding: 12px 14px 14px;
+            font-size: 0.85rem;
+            line-height: 1.4;
+        }
+
+        .clip-info span {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: #fff;
+        }
+
+        .clip-info small {
+            color: #ffd54f;
+        }
+
+        @media (max-width: 900px) {
+            .insta-clips {
+                top: 80px;
+                right: 18px;
+                max-width: 200px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            /* Allow insta-clips on small screens and make it draggable via touch
+               We keep it visible so users can reposition by swiping. */
+            .insta-clips {
+                display: flex;
+                max-width: 180px;
+                touch-action: none; /* enable pointer events for dragging */
+            }
+        }
+
+        /* Floating 3D Text Overlay */
+        .text-overlay {
+            position: absolute;
+            bottom: 12%;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 5;
+            color: #ffca28;
+            font-family: 'Great Vibes', cursive;
+            font-size: 3.2rem;
+            text-shadow: 0 0 10px rgba(255, 202, 40, 0.6), 0 0 20px rgba(255, 112, 67, 0.4);
+            pointer-events: none;
+            text-align: center;
+            width: 90%;
+            line-height: 1.3;
+        }
+
+        /* The Secret Friendship Letter Popup */
+        .letter-modal {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.8);
+            width: 90%;
+            max-width: 450px;
+            background: #fffdf7;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.6), inset 0 0 20px rgba(255, 167, 38, 0.1);
+            border: 2px solid #ffe082;
+            z-index: 20;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .letter-modal.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        .letter-header {
+            font-family: 'Great Vibes', cursive;
+            color: #e60000;
+            font-size: 2.5rem;
+            text-align: center;
+            margin-bottom: 15px;
+            border-bottom: 1px dashed #ffd54f;
+            padding-bottom: 5px;
+        }
+
+        .letter-body {
+            font-family: 'Poppins', sans-serif;
+            color: #4e342e;
+            font-size: 0.95rem;
+            line-height: 1.7;
+            text-align: center;
+            margin-bottom: 20px;
+            max-height: 280px;
+            overflow-y: auto;
+        }
+
+        .close-btn {
+            display: block;
+            margin: 0 auto;
+            background: #ff5722;
+            border: none;
+            padding: 8px 25px;
+        }
+        
+        .close-btn:hover {
+            background: #ea3d09;
+        }
+    </style>
+</head>
+<body>
+
+    <audio id="bg-music" loop preload="auto">
+        <source src="c:\Users\divya\Downloads\mastmusic.mp3" type="audio/mp3">
+    </audio>
+
+    <div class="controls">
+        <button id="music-toggle">Play Music</button>
+        <button id="pulse-toggle">Stop Pulse</button>
+        <button id="view-letter">Open Letter</button>
+    </div>
+
+    <div id="canvas-container"></div>
+    <div class="text-overlay">
+        Happy Best Friend's Day! <br>
+        <span style="font-family: 'Poppins'; font-size: 1.1rem; font-weight: 300; color: #fff; letter-spacing: 1px;">
+            To the one who makes the good times better and the hard times easier. 💛
+        </span>
+    </div>
+
+    <div class="letter-modal" id="letter-modal">
+        <div class="letter-header">To My Best Friend,</div>
+        <div class="letter-body">
+            Today is all about celebrating the incredible bond we share. 
+            <br><br>
+            Thank you for being my constant rock, my partner in crime, and the person who knows me better than anyone else. No matter where life takes us, I know I can always count on your laughter, your advice, and your unyielding support.
+            <br><br>
+            More than just a best friend, you are family by choice. Cheers to all the crazy memories we've made, and to the countless ones still waiting for us down the road.
+            <br><br>
+            <strong>Happy Best Friend's Day! 🥂✨</strong>
+        </div>
+        <button class="close-btn" id="close-letter">Close</button>
+    </div>
+
+    <video id="instaClip" style="display:none; position:fixed; bottom:20px; right:20px; width:360px; max-width:90vw; border:2px solid #fff; border-radius:12px; box-shadow:0 12px 30px rgba(0,0,0,0.35); z-index:1000;" preload="auto"></video>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <script>
+        // --- 1. SETUP THREE.JS SCENE ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        
+        // Camera
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.z = 5;
+
+        // Renderer
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+
+        // --- 2. CREATE CENTRAL 3D HEART SHAPE ---
+        const x = 0, y = 0;
+        const heartShape = new THREE.Shape();
+        heartShape.moveTo(x + 0.5, y + 0.5);
+        heartShape.bezierCurveTo(x + 0.5, y + 0.5, x + 0.4, y, x, y);
+        heartShape.bezierCurveTo(x - 0.6, y, x - 0.6, y + 0.7, x - 0.6, y + 0.7);
+        heartShape.bezierCurveTo(x - 0.6, y + 1.1, x - 0.3, y + 1.54, x + 0.5, y + 1.9);
+        heartShape.bezierCurveTo(x + 1.2, y + 1.54, x + 1.6, y + 1.1, x + 1.6, y + 0.7);
+        heartShape.bezierCurveTo(x + 1.6, y + 0.7, x + 1.6, y, x + 1, y);
+        heartShape.bezierCurveTo(x + 0.7, y, x + 0.5, y + 0.5, x + 0.5, y + 0.5);
+
+        const extrudeSettings = {
+            depth: 0.4,
+            bevelEnabled: true,
+            bevelSegments: 5,
+            steps: 1,
+            bevelSize: 0.1,
+            bevelThickness: 0.1
+        };
+
+        const geometry = new THREE.ExtrudeGeometry(heartShape, extrudeSettings);
+        geometry.center(); // Centers geometry orientation anchor point
+
+        const material = new THREE.MeshPhongMaterial({
+            color: 0xff5722,
+            shininess: 100,
+            specular: 0xffb74d,
+            flatShading: false
+        });
+        
+        const mainHeart = new THREE.Mesh(geometry, material);
+        // Flip invert rotation adjustment because Three.js shapes generate upside down by default orientation
+        mainHeart.rotation.z = Math.PI;
+        mainHeart.position.y = 0.5;
+        scene.add(mainHeart);
+
+        // --- 3. PARTICLES / CELEBRATION CONFETTI EFFECT ---
+        const particleCount = 250;
+        const particleGeometry = new THREE.BufferGeometry();
+        const positions = new Float32Array(particleCount * 3);
+        const speeds = [];
+
+        for(let i = 0; i < particleCount * 3; i += 3) {
+            positions[i] = (Math.random() - 0.5) * 10;
+            positions[i+1] = (Math.random() - 0.5) * 10;
+            positions[i+2] = (Math.random() - 0.5) * 10;
+            
+            speeds.push({
+                x: (Math.random() - 0.5) * 0.01,
+                y: (Math.random() + 0.1) * 0.012,
+                z: (Math.random() - 0.5) * 0.01
+            });
+        }
+
+        particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+        // Golden/Amber glowing friendship sparkles
+        const particleMaterial = new THREE.PointsMaterial({
+            color: 0xffca28,
+            size: 0.08,
+            transparent: true,
+            opacity: 0.85
+        });
+
+        const particleSystem = new THREE.Points(particleGeometry, particleMaterial);
+        scene.add(particleSystem);
+
+        // --- 4. LIGHTING ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(5, 5, 5);
+        scene.add(dirLight);
+
+        const pointLight = new THREE.PointLight(0xffa726, 1.5, 10);
+        pointLight.position.set(0, 0, 2);
+        scene.add(pointLight);
+
+        // --- 5. ANIMATION LOGIC VARIABLES ---
+        let clock = new THREE.Clock();
+        let isPulsing = true;
+        let targetScale = 1;
+
+        // --- 6. USER INTERACTION INTERFACES ---
+        const music = document.getElementById('bg-music');
+        const musicBtn = document.getElementById('music-toggle');
+        const pulseBtn = document.getElementById('pulse-toggle');
+        const viewLetterBtn = document.getElementById('view-letter');
+        const closeLetterBtn = document.getElementById('close-letter');
+        const modal = document.getElementById('letter-modal');
+
+        const musicStartPoint = 29; 
+        let musicHasStarted = false;
+
+        const clipCards = document.querySelectorAll('.clip-card');
+        const instaClip = document.getElementById('instaClip');
+
+        clipCards.forEach(card => {
+            card.addEventListener('click', (event) => {
+                event.preventDefault();
+                const videoSrc = card.dataset.video;
+                if (!videoSrc) return;
+                instaClip.src = videoSrc;
+                instaClip.style.display = 'block';
+                instaClip.controls = true;
+                instaClip.play().catch(() => {});
+            });
+        });
+
+        instaClip.addEventListener('ended', () => {
+            instaClip.style.display = 'none';
+        });
+
+        music.addEventListener('loadedmetadata', () => {
+            if (!musicHasStarted && musicStartPoint > 0 && music.duration > musicStartPoint) {
+                music.currentTime = musicStartPoint;
+            }
+        });
+
+        musicBtn.addEventListener('click', () => {
+            if (music.paused) {
+                if (!musicHasStarted && musicStartPoint > 0) {
+                    music.currentTime = musicStartPoint;
+                    musicHasStarted = true;
+                }
+                music.play().catch(e => console.log("Audio play blocked until user gesture."));
+                musicBtn.innerText = "Pause Music";
+            } else {
+                music.pause();
+                musicBtn.innerText = "Play Music";
+            }
+        });
+
+        pulseBtn.addEventListener('click', () => {
+            isPulsing = !isPulsing;
+            pulseBtn.innerText = isPulsing ? "Stop Pulse" : "Play Pulse";
+        });
+
+        viewLetterBtn.addEventListener('click', () => modal.classList.add('active'));
+        closeLetterBtn.addEventListener('click', () => modal.classList.remove('active'));
+
+        // Handle Touch/Mouse Drag to Rotate 3D Object
+        let isDragging = false;
+        let previousMousePosition = { x: 0, y: 0 };
+
+        window.addEventListener('mousedown', () => isDragging = true);
+        window.addEventListener('mouseup', () => isDragging = false);
+        window.addEventListener('mousemove', (e) => {
+            const deltaMove = {
+                x: e.offsetX - previousMousePosition.x,
+                y: e.offsetY - previousMousePosition.y
+            };
+
+            if(isDragging) {
+                mainHeart.rotation.y += deltaMove.x * 0.005;
+                mainHeart.rotation.x += deltaMove.y * 0.005;
+            }
+
+            previousMousePosition = { x: e.offsetX, y: e.offsetY };
+        });
+
+        // Mobile Touch Support
+        window.addEventListener('touchstart', (e) => {
+            isDragging = true;
+            previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        });
+        window.addEventListener('touchend', () => isDragging = false);
+        window.addEventListener('touchmove', (e) => {
+            if(!isDragging) return;
+            const deltaMove = {
+                x: e.touches[0].clientX - previousMousePosition.x,
+                y: e.touches[0].clientY - previousMousePosition.y
+            };
+            mainHeart.rotation.y += deltaMove.x * 0.008;
+            mainHeart.rotation.x += deltaMove.y * 0.008;
+            previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        });
+
+        // --- 7. MAIN ENGINE ANIMATION LOOP ---
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const elapsedTime = clock.getElapsedTime();
+
+            // Rhythmic heartbeat pulse wave
+            if (isPulsing) {
+                targetScale = 1 + Math.abs(Math.sin(elapsedTime * 3.5)) * 0.2;
+                mainHeart.scale.set(targetScale, targetScale, targetScale);
+            } else {
+                mainHeart.scale.set(1, 1, 1);
+            }
+
+            // Continuous background rotation when not interacting
+            if(!isDragging) {
+                mainHeart.rotation.y += 0.01;
+            }
+
+            // Animate Confetti Sparkles
+            const coords = particleGeometry.attributes.position.array;
+            for(let i = 0; i < particleCount * 3; i += 3) {
+                coords[i] += speeds[i/3].x;
+                coords[i+1] -= speeds[i/3].y; 
+                coords[i+2] += speeds[i/3].z;
+
+                if(coords[i+1] < -5) {
+                    coords[i+1] = 5;
+                    coords[i] = (Math.random() - 0.5) * 10;
+                }
+            }
+            particleGeometry.attributes.position.needsUpdate = true;
+
+            renderer.render(scene, camera);
+        }
+
+        // --- 8. WINDOW RESIZE HANDLING ---
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+        animate();
+    </script>
+
+    <!-- Instagram clip video element -->
+    <!-- Update the src attribute to the actual video path or URL for the insta clip -->
+    <video id="instaClip" src="/path/to/insta_clip.mp4" style="display:none;" preload="auto"></video>
+</body>
+</html>
